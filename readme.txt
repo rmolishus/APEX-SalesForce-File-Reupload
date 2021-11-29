@@ -13,6 +13,11 @@ This code gets all files with more than 1 version.
 For each file, it copies the latest version of the file and 1 of it's links to an object/user/etc.
 Once these have been inserted, it deletes the old file. 
 
+Needed Modifications:
+-Exclude the user running the script's Id from the CDL query
+	-Uploading the new ContentVersion automatically adds a CDL to the owner (user running the script).
+	-Trying to add a 'duplicate' linkedEntity will result in an error
+
 Possible Modifications:
 -Currently, the original Salesforce created date is appended to the new file's title.
 	To get rid of this or modify it's placement, change the title assignment and/or remove the code the gets the created date.
@@ -23,9 +28,6 @@ Possible Modifications:
 	1.ShareType should be set to 'V' for viewer, otherwise you may get an error
 	2. If the file was previously owned by another user, they will now be set as a viewer.
 	   -The account who runs the code will be set as the new owner.
-	3. To 'reupload' a document owned by the user running the code, exclude the user's Id from the CDL query or add a try to the CDL insert.
-		-Uploading the new ContentVersion automatically adds a CDL to the owner (user running the script).
-		-Trying to add a 'duplicate' linkedEntity will result in an error
 
 Final Thoughts:
 I couldn't find something that already did this in bulk, so I hope this can help soomeone with the same problem out.
