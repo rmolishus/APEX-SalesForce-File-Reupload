@@ -21,7 +21,7 @@ global without sharing class FileReupload implements Database.Batchable<sObject>
             Date myDate = date.newinstance(cv.CreatedDate.year(), cv.CreatedDate.month(), cv.CreatedDate.day());
             
 	    //check for existing Content Document links
-	    //Add the running user's Id here to avoid duplicate LinkedEntityId errors OR remove LinkedEntityId part from query & add try/catch to CDL insert
+	    //Add the running user's Id here to avoid duplicate LinkedEntityId errors ex: LinkedEntityId != '005ABC123'
 	    //to add Content Document Links to users change ShareType to 'V' further down
 	    //Note: Currently only selects 1 link per file, must modify code to process more
 	    //this will affect how many files can be processed per batch
