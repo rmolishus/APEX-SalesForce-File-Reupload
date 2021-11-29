@@ -1,0 +1,66 @@
+global without sharing class FileReupload implements Database.Batchable<sObject> {
+    global Database.QueryLocator start(Database.BatchableContext BC) {
+        // collect the batches of records or objects to be passed to execute
+        System.debug('Starting...');
+        String query = 'SELECT ContentDocumentId,Title,FileExtension,ContentLocation,Description,VersionData,CreatedDate FROM ContentVersion WHERE IsLatest = TRUE AND VersionNumber != \'1\'';
+        return Database.getQueryLocator(query);
+    }
+     
+    global void execute(Database.BatchableContext BC, List<ContentVersion> cvs) {
+        System.debug('Executing...');
+        // process each batch of records; default size is 200, set to <= 25 to avoid SOQL limits
+        for(ContentVersion cv : cvs) { 
+
+	    //Debugging statements
+            System.debug('Current CD being processed: '+ cv.ContentDocumentId);
+            System.debug('Title: '+ cv.Title);
+
+            //get created date of original document (optional, but useful if file's created date is important)
+	    //Note: Created Date reflects when file was created/uploaded IN Salesforce
+            ContentVersion newcont = new ContentVersion();
+            Date myDate = date.newinstance(cv.CreatedDate.year(), cv.CreatedDate.month(), cv.CreatedDate.day());
+            
+	    //check for existing Content Document links
+	    //to add Content Document Links to users change ShareType to 'V' further down
+	    //Note: Currently only selects 1 link per file, must modify code to process more
+	    //this will affect how many files can be processed per batch
+	    //If no links exist, moves on to next file, DOES NOT delete old file, must modify code to do this
+            List<ContentDocumentLink> cdl = [SELECT LinkedEntityId FROM ContentDocumentLink WHERE ContentDocumentId = :cv.ContentDocumentId LIMIT 1];
+            if (cdl.size() == 0){
+		System.debug('Moving on to next file...');
+                continue;
+            }
+
+            //create copy of latest version of file
+            newcont.Title  = cv.Title + ' ' + string.valueOf(myDate);
+            newcont.PathOnClient  = cv.Title+'.'+cv.FileExtension;
+            newcont.VersionData = cv.VersionData;
+            newcont.ContentLocation = cv.ContentLocation;
+            newcont.Description = cv.Description;
+            insert newcont;
+
+            //Get new contentDocumentId
+            string newCDid = [SELECT contentDocumentid FROM contentVersion WHERE Id =:newcont.Id].contentDocumentId;
+            
+            //get & copy contentDocumentLink
+            ContentDocumentLink c = new ContentDocumentLink();
+            c.LinkedEntityId = cdl[0].LinkedEntityId;
+            c.ContentDocumentId = newCDid;
+            c.ShareType = 'I';
+            insert c;
+
+	    //Debugging statement to check for new File + new Link(s)
+            System.debug('NEW CDL: '+ c.Id);
+            System.debug('New CD Id: '+ newCDid);
+            
+            //delete old file
+            ContentDocument cd = [SELECT Id FROM ContentDocument WHERE Id =:cv.ContentDocumentId];
+            delete cd;
+        }
+         
+    }   
+     
+    global void finish(Database.BatchableContext BC) {
+        // execute any post-processing operations like sending email
+    }
+}
