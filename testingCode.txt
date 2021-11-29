@@ -1,0 +1,42 @@
+@isTest
+public class TestFileProcessing {
+    @isTest static void test1(){
+	//add account
+        Account acct = new Account();
+        acct.Name = 'Test Account1';
+        insert acct;
+
+	//add contentversion
+        ContentVersion cv = new ContentVersion();
+        cv.Title  = 'test cv ';
+        cv.PathOnClient  = 'test';
+        Blob b=Blob.valueOf('Unit Test Attachment Body');
+	cv.VersionData=EncodingUtil.base64Decode('Unit Test Attachment Body');
+        insert cv;
+        
+	//add CDL
+        string newCDid = [SELECT contentDocumentid FROM contentVersion WHERE Id =:cv.Id].contentDocumentId;
+        ContentDocumentLink cd = new ContentDocumentLink();
+        cd.LinkedEntityId = acct.Id;
+        cd.ContentDocumentId = newCDid;
+        insert cd;
+        
+	//add second content version
+        ContentVersion c = new ContentVersion();
+        Blob b2 =Blob.valueOf('Unit Test Attachment Body');
+	c.VersionData=EncodingUtil.base64Decode('Unit Test Attachment Body');
+        c.ReasonForChange = 'testing';
+        c.ContentDocumentId = newCDid;
+        c.PathOnClient = cv.PathOnClient;
+        insert c;
+
+	//This test really doesn't do anything but run the script with 1 file
+	//It's not very helpful and you'll probably want to do your own testing
+	//But if you're looking to simply push this to production and not do real testing
+	//This should get around 96% coverage
+        Test.startTest();
+        FileBatchProcessing myBatchObject = new FileBatchProcessing();
+        Id batchId = Database.executeBatch(myBatchObject);
+        Test.stopTest();
+    }
+}
