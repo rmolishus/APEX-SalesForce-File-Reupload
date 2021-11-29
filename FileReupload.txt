@@ -21,11 +21,12 @@ global without sharing class FileReupload implements Database.Batchable<sObject>
             Date myDate = date.newinstance(cv.CreatedDate.year(), cv.CreatedDate.month(), cv.CreatedDate.day());
             
 	    //check for existing Content Document links
+	    //Add the running user's Id here to avoid duplicate LinkedEntityId errors OR remove LinkedEntityId part from query & add try/catch to CDL insert
 	    //to add Content Document Links to users change ShareType to 'V' further down
 	    //Note: Currently only selects 1 link per file, must modify code to process more
 	    //this will affect how many files can be processed per batch
 	    //If no links exist, moves on to next file, DOES NOT delete old file, must modify code to do this
-            List<ContentDocumentLink> cdl = [SELECT LinkedEntityId FROM ContentDocumentLink WHERE ContentDocumentId = :cv.ContentDocumentId LIMIT 1];
+            List<ContentDocumentLink> cdl = [SELECT LinkedEntityId FROM ContentDocumentLink WHERE ContentDocumentId = :cv.ContentDocumentId AND LinkedEntityId != '{running user's Id here}' LIMIT 1];
             if (cdl.size() == 0){
 		System.debug('Moving on to next file...');
                 continue;
